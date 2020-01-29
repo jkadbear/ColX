@@ -6,7 +6,8 @@
 # and updated through methods of this model.
 #
 from collections import OrderedDict
-import xlrd
+from pathlib import Path
+from xlrd import open_workbook
 
 class Model:
     def __init__( self ):
@@ -14,53 +15,75 @@ class Model:
         Initializes the two members the class holds:
         the file name and its contents.
         '''
+        self.filePath = None
+        self.folder = None
         self.fileName = None
-        self.resFileName = None
+        self.resFilePath = None
         # default value
         self.colName = ['TIME', 'AV', 'AI']
         self.maxCol = [0, 1, 1000]
 
-    def isValid( self, fileName ):
+    def isValid( self, path ):
         '''
-        returns True if the file exists and can be
+        returns True if the path exists and can be
         opened.  Returns False otherwise.
         '''
-        try:
-            file = open( fileName, 'r' )
-            file.close()
-            return True
-        except:
-            return False
+        p = Path(str(path))
+        return p.exists()
 
-    def setFileName( self, fileName ):
+    def getFilePath( self ):
         '''
-        sets the member fileName to the value of the argument
-        if the file exists.  Otherwise resets both the filename
-        and file contents members.
+        Returns the path of the file name member.
         '''
-        if self.isValid( fileName ):
-            self.fileName = fileName
-            res = fileName.split('.')
-            self.resFileName = '.'.join(res[0:-1]) + '.csv'
+        return self.filePath
 
-    def getFileName( self ):
+    def setFilePath( self, filePath ):
         '''
-        Returns the name of the file name member.
+        sets the member filePath to the value of the argument
+        if the file exists.  Otherwise resets the filePath.
         '''
-        return self.fileName
+        if self.isValid( filePath ):
+            self.filePath = filePath
+            self._setResFilePath(filePath)
 
-    def getResFileName( self ):
-        return self.resFileName
+    def getFolder( self ):
+        '''
+        Returns the name of the folder name member.
+        '''
+        return self.folder
+
+    def setFolder( self, folder ):
+        '''
+        sets the member folder to the value of the argument
+        if the folder exists.  Otherwise resets the folder.
+        '''
+        if self.isValid( folder ):
+            self.folder = folder
+            self._setResFilePath(folder)
+
+    def getResFilePath( self ):
+        return self.resFilePath
+
+    def _setResFilePath( self, path ):
+        p = Path(str(path))
+        if self.folder and not p.is_dir():
+            name = p.name.split('.')
+            resFileName = '.'.join(name[0:-1]) + '.csv'
+            self.resFilePath = str(Path(self.folder) / resFileName)
+        elif self.filePath and p.is_dir():
+            name = Path(self.filePath).name.split('.')
+            resFileName = '.'.join(name[0:-1]) + '.csv'
+            self.resFilePath = str(Path(path) / resFileName)
 
     def setColName( self, text ):
-        if text is not None:
+        if text:
             self.colName = [s.strip() for s in text.split(',')]
 
     def getColName( self ):
         return self.colName
 
     def setMaxCol( self, text ):
-        if text is not None:
+        if text:
             try:
                 self.maxCol = [int(s) for s in text.split(',')]
             except:
@@ -69,14 +92,8 @@ class Model:
     def getMaxCol( self ):
         return self.maxCol
 
-    def writeDoc( self ):
-        '''
-        Writes the string that is passed as argument to a
-        a text file with name equal to the name of the file
-        that was read, plus the suffix ".bak"
-        '''
-
-        workbook = xlrd.open_workbook(self.fileName)
+    def extract( self ):
+        workbook = open_workbook(self.filePath)
 
         # init final sheet and column number limit
         final_sheet = OrderedDict()
@@ -97,7 +114,10 @@ class Model:
                     try:
                         if col_cnt[name] < max_num[name]:
                             idx = header.index(name)
-                            final_sheet[name].append(worksheet.col_values(idx))
+                            col = worksheet.col_values(idx)
+                            # add sheet name to each column header
+                            col[0] = f'{str(col[0])}({sheet_name})'
+                            final_sheet[name].append(col)
                             col_cnt[name] = col_cnt[name] + 1
                     except:
                         # not target column
@@ -115,5 +135,5 @@ class Model:
             l = [str(res[i][rr]) if rr < len(res[i]) else ' ' for i in range(size_c)]
             s.append(','.join(l))
 
-        with open(self.resFileName, 'w') as f:
+        with open(self.resFilePath, 'w') as f:
             f.write('\n'.join(s))

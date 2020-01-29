@@ -27,7 +27,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         '''
         super().setupUi( MW )
         self.refreshAll()
-        top_s = 'ColX @Version 1.0 @Author jkadbear @Copyright 2020'
+        top_s = 'ColX @Version 1.1 @Author jkadbear @Copyright 2020'
         self.debugTextBrowser.append( top_s + '\n' + '='*60 )
 
         # close the lower part of the splitter to hide the
@@ -48,22 +48,23 @@ class MainWindowUIClass( Ui_MainWindow ):
         is called, pulling from the model information that is
         updated in the GUI.
         '''
-        self.lineEdit.setText( self.model.getFileName() )
+        self.lineEdit.setText( self.model.getFilePath() )
+        self.lineEdit_4.setText( self.model.getFolder()  )
         self.lineEdit_2.setText( ','.join(self.model.getColName()) )
         self.lineEdit_3.setText( ','.join([str(i) for i in self.model.getMaxCol()]) )
 
-    # slot
-    def returnPressedSlot( self ):
+    def enterOpenSlot( self ):
         ''' Called when the user enters a string in the line edit and
         presses the ENTER key.
         '''
-        fileName =  self.lineEdit.text()
-        if self.model.isValid( fileName ):
-            self.model.setFileName( self.lineEdit.text() )
+        filePath =  self.lineEdit.text()
+        if self.model.isValid( filePath ):
+            self.model.setFilePath( self.lineEdit.text() )
+            self.debugPrint( 'setting file path: ' + filePath )
             self.refreshAll()
         else:
             m = QtWidgets.QMessageBox()
-            m.setText("Invalid file name!\n" + fileName )
+            m.setText("Invalid file path!\n" + filePath )
             m.setIcon(QtWidgets.QMessageBox.Warning)
             m.setStandardButtons(QtWidgets.QMessageBox.Ok
                                  | QtWidgets.QMessageBox.Cancel)
@@ -71,31 +72,64 @@ class MainWindowUIClass( Ui_MainWindow ):
             ret = m.exec_()
             self.lineEdit.setText( '' )
             self.refreshAll()
-            self.debugPrint( 'Invalid file specified: ' + fileName  )
+            self.debugPrint( 'Invalid file specified: ' + filePath )
 
-    # slot
-    def writeDocSlot( self ):
-        ''' Called when the user presses the Write-Doc button.
+    def enterSaveSlot( self ):
+        ''' Called when the user enters a string in the line edit and
+        presses the ENTER key.
         '''
-        if self.model.isValid(self.model.getFileName()):
-            self.model.writeDoc()
+        folder = self.lineEdit_4.text()
+        if self.model.isValid( folder ):
+            self.model.setFolder( self.lineEdit_4.text() )
+            self.debugPrint( 'setting saving folder: ' + folder )
             self.refreshAll()
-            self.debugPrint( 'saving extraction results to ' + self.model.getResFileName() )
+        else:
+            m = QtWidgets.QMessageBox()
+            m.setText("Invalid folder name!\n" + folder )
+            m.setIcon(QtWidgets.QMessageBox.Warning)
+            m.setStandardButtons(QtWidgets.QMessageBox.Ok
+                                 | QtWidgets.QMessageBox.Cancel)
+            m.setDefaultButton(QtWidgets.QMessageBox.Cancel)
+            ret = m.exec_()
+            self.lineEdit_4.setText( '' )
+            self.refreshAll()
+            self.debugPrint( 'Invalid folder specified: ' + folder  )
 
-    # slot
-    def browseSlot( self ):
+    def extractSlot( self ):
+        ''' Called when the user presses the Extract button.
+        '''
+        if self.model.isValid(self.model.getFilePath()) and \
+            self.model.isValid(self.model.getFolder()):
+            self.model.extract()
+            self.refreshAll()
+            self.debugPrint( 'saving extraction results to ' + self.model.getResFilePath() )
+
+    def browseOpenSlot( self ):
         ''' Called when the user presses the Browse button
         '''
         options = QtWidgets.QFileDialog.Options()
-        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
+        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(
                         None,
                         'QFileDialog.getOpenFileName()',
                         '',
                         'Excel Files (*.xls *.xlsx);;All Files (*)',
                         options=options)
-        if fileName:
-            self.debugPrint( 'setting file name: ' + fileName )
-            self.model.setFileName( fileName )
+        if filePath:
+            self.debugPrint( 'setting file path: ' + filePath )
+            self.model.setFilePath( filePath )
+            self.refreshAll()
+
+    def browseSaveSlot( self ):
+        ''' Called when the user presses the Browse button
+        '''
+        folder = QtWidgets.QFileDialog.getExistingDirectory(
+                     None,
+                     'Select a folder:',
+                     '',
+                     options=QtWidgets.QFileDialog.ShowDirsOnly)
+        if folder:
+            self.debugPrint( 'setting saving folder: ' + folder )
+            self.model.setFolder( folder )
             self.refreshAll()
 
     def columnNameSlot( self, text):
