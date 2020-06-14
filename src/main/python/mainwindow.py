@@ -125,7 +125,7 @@ class Ui_MainWindow( QObject ):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "ColX"))
         self.label_2.setText(_translate("MainWindow", "Open File"))
         self.label.setText(_translate("MainWindow", "Save to"))
         self.pushButton.setText(_translate("MainWindow", "Browse"))

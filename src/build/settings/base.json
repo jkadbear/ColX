@@ -1,0 +1,6 @@
+{
+    "app_name": "ColX",
+    "author": "jkadbear",
+    "main_module": "src/main/python/main.py",
+    "version": "1.2"
+}
